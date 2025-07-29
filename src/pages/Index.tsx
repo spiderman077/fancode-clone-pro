@@ -5,8 +5,10 @@ import { MatchCard } from '@/components/MatchCard';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { BackgroundImage } from '@/components/BackgroundImage';
 import { Footer } from '@/components/Footer';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { useMatches } from '@/hooks/useMatches';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { 
@@ -15,18 +17,37 @@ const Index = () => {
     upcomingMatches, 
     filters, 
     activeFilter, 
-    setActiveFilter 
+    setActiveFilter,
+    loading,
+    error,
+    refetch,
+    fetchStreamUrls
   } = useMatches();
 
   const [currentStream, setCurrentStream] = useState<{
     url: string;
     title: string;
+    matchId?: string;
   } | null>(null);
 
-  const handleWatchStream = (streamUrl: string, type: 'dai' | 'adfree', title: string) => {
+  const handleWatchStream = async (streamUrl: string, type: 'dai' | 'adfree', title: string, matchId?: string) => {
+    // Try to get fresh stream URLs if matchId is available
+    if (matchId) {
+      try {
+        const freshStreams = await fetchStreamUrls(matchId);
+        const freshUrl = type === 'dai' ? freshStreams.dai : freshStreams.adfree;
+        if (freshUrl) {
+          streamUrl = freshUrl;
+        }
+      } catch (error) {
+        console.error('Failed to fetch fresh stream URLs:', error);
+      }
+    }
+
     setCurrentStream({
       url: streamUrl,
-      title: `${title} - ${type.toUpperCase()} Stream`
+      title: `${title} - ${type.toUpperCase()} Stream`,
+      matchId
     });
   };
 
@@ -40,6 +61,35 @@ const Index = () => {
       <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header Section */}
         <Header filters={filters} />
+
+        {/* Loading/Error States */}
+        {loading && (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Fetching live matches from fancode...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-4 mb-8">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-destructive text-sm mb-2">{error}</p>
+              <Button variant="outline" size="sm" onClick={refetch}>
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Connection Status */}
+        <div className="mb-8">
+          <ConnectionStatus 
+            isConnected={!loading && !error && matches.length > 0}
+            isLoading={loading}
+            error={error}
+            onRetry={refetch}
+          />
+        </div>
 
         {/* Match Filters */}
         <div className="mb-12">
@@ -68,7 +118,7 @@ const Index = () => {
                   key={match.id}
                   match={match}
                   onWatchStream={(streamUrl, type) => 
-                    handleWatchStream(streamUrl, type, match.title)
+                    handleWatchStream(streamUrl, type, match.title, match.id)
                   }
                 />
               ))}
@@ -120,7 +170,7 @@ const Index = () => {
                   key={match.id}
                   match={match}
                   onWatchStream={(streamUrl, type) => 
-                    handleWatchStream(streamUrl, type, match.title)
+                    handleWatchStream(streamUrl, type, match.title, match.id)
                   }
                 />
               ))}
@@ -146,6 +196,7 @@ const Index = () => {
         <VideoPlayer
           streamUrl={currentStream.url}
           title={currentStream.title}
+          matchId={currentStream.matchId}
           onClose={closePlayer}
         />
       )}
