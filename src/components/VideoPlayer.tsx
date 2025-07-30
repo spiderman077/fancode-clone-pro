@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Volume2, VolumeX, Play, Pause, Maximize, Settings } from 'lucide-react';
+import { X, Volume2, VolumeX, Play, Pause, Maximize, Settings, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FancodeApiService } from '@/services/FancodeApiService';
+import { CloudflareProxyService } from '@/services/CloudflareProxyService';
 import { HLSPlayerManager } from '@/utils/HLSPlayerManager';
 
 interface VideoPlayerProps {
@@ -23,6 +23,9 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
   const [loading, setLoading] = useState(true);
   const [processedUrl, setProcessedUrl] = useState<string>('');
   const [hlsPlayer, setHlsPlayer] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   // Process stream URL and setup video
   useEffect(() => {
@@ -33,8 +36,8 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
       setError(null);
 
       try {
-        // Process the stream URL through CORS proxy
-        const processed = FancodeApiService.processStreamUrl(streamUrl);
+        // Process the stream URL through Cloudflare-optimized proxy
+        const processed = await CloudflareProxyService.getStreamProxy(streamUrl);
         setProcessedUrl(processed);
 
         if (videoRef.current) {
@@ -60,12 +63,16 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
           };
           const handlePlay = () => setIsPlaying(true);
           const handlePause = () => setIsPlaying(false);
+          const handleTimeUpdate = () => setCurrentTime(video.currentTime);
+          const handleLoadedMetadata = () => setDuration(video.duration);
 
           video.addEventListener('loadstart', handleLoadStart);
           video.addEventListener('canplay', handleCanPlay);
           video.addEventListener('error', handleError);
           video.addEventListener('play', handlePlay);
           video.addEventListener('pause', handlePause);
+          video.addEventListener('timeupdate', handleTimeUpdate);
+          video.addEventListener('loadedmetadata', handleLoadedMetadata);
 
           // Try direct video first
           if (processed.includes('.m3u8')) {
@@ -90,6 +97,8 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
             video.removeEventListener('error', handleError);
             video.removeEventListener('play', handlePlay);
             video.removeEventListener('pause', handlePause);
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('loadedmetadata', handleLoadedMetadata);
           };
         }
       } catch (error) {
@@ -164,6 +173,41 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
     }
   };
 
+  const skipTime = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime += seconds;
+    }
+  };
+
+  const changePlaybackRate = (rate: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = rate;
+      setPlaybackRate(rate);
+    }
+  };
+
+  const seekTo = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
+  const restartStream = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = Math.floor(time % 60);
+    return hours > 0 
+      ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      : `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const openInNewTab = () => {
     window.open(processedUrl || streamUrl, '_blank');
   };
@@ -224,27 +268,81 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
             playsInline
           />
 
+          {/* Progress Bar */}
+          <div className="absolute bottom-16 left-4 right-4">
+            <div className="flex items-center gap-2 text-white text-sm mb-2">
+              <span>{formatTime(currentTime)}</span>
+              <div className="flex-1 bg-white/20 h-1 rounded-full overflow-hidden">
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={(e) => seekTo(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-transparent appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, rgba(255,255,255,0.2) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.2) 100%)`
+                  }}
+                />
+              </div>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
           {/* Custom Video Controls Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
             <div className="flex items-center justify-between text-white">
-              {/* Play Controls */}
-              <div className="flex items-center gap-3">
+              {/* Left Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={restartStream}
+                  className="text-white hover:bg-white/20"
+                  title="Restart"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => skipTime(-10)}
+                  className="text-white hover:bg-white/20"
+                  title="Rewind 10s"
+                >
+                  <SkipBack className="w-4 h-4" />
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={togglePlay}
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 w-10 h-10"
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
                 </Button>
-                
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => skipTime(10)}
+                  className="text-white hover:bg-white/20"
+                  title="Forward 10s"
+                >
+                  <SkipForward className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Center Controls */}
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleMute}
                   className="text-white hover:bg-white/20"
                 >
-                  {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </Button>
 
                 <input
@@ -254,8 +352,21 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                  className="w-20 accent-primary"
+                  className="w-16 accent-primary"
                 />
+
+                <select
+                  value={playbackRate}
+                  onChange={(e) => changePlaybackRate(parseFloat(e.target.value))}
+                  className="bg-black/50 text-white text-xs border border-white/20 rounded px-2 py-1"
+                >
+                  <option value={0.5}>0.5x</option>
+                  <option value={0.75}>0.75x</option>
+                  <option value={1}>1x</option>
+                  <option value={1.25}>1.25x</option>
+                  <option value={1.5}>1.5x</option>
+                  <option value={2}>2x</option>
+                </select>
               </div>
 
               {/* Right Controls */}
@@ -265,9 +376,9 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
                   size="icon"
                   onClick={openInNewTab}
                   className="text-white hover:bg-white/20"
-                  title="Open in new tab"
+                  title="External Player"
                 >
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-4 h-4" />
                 </Button>
                 
                 <Button
@@ -276,7 +387,7 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
                   onClick={toggleFullscreen}
                   className="text-white hover:bg-white/20"
                 >
-                  <Maximize className="w-5 h-5" />
+                  <Maximize className="w-4 h-4" />
                 </Button>
               </div>
             </div>
