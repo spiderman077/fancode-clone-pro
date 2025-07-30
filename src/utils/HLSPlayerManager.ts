@@ -43,57 +43,70 @@ export class HLSPlayerManager {
       if (Hls.isSupported()) {
         const hls = new Hls({
           debug: false,
+          // Enhanced buffering for smoother playback
           enableWorker: true,
-          lowLatencyMode: true,
+          lowLatencyMode: false, // Disable for better buffering
           backBufferLength: 90,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 600,
-          maxBufferSize: 60 * 1000 * 1000,
-          maxBufferHole: 0.5,
-          highBufferWatchdogPeriod: 2,
+          maxBufferLength: 60, // Increased buffer
+          maxMaxBufferLength: 120, // Larger max buffer  
+          maxBufferSize: 120 * 1000 * 1000, // 120MB buffer
+          maxBufferHole: 0.3,
+          highBufferWatchdogPeriod: 3,
           nudgeOffset: 0.1,
-          nudgeMaxRetry: 3,
+          nudgeMaxRetry: 5, // More retries
           maxFragLookUpTolerance: 0.25,
-          liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: Infinity,
+          liveSyncDurationCount: 5, // More sync buffer
+          liveMaxLatencyDurationCount: 15,
           liveDurationInfinity: false,
           enableSoftwareAES: true,
-          manifestLoadingTimeOut: 10000,
-          manifestLoadingMaxRetry: 1,
-          manifestLoadingRetryDelay: 1000,
-          levelLoadingTimeOut: 10000,
-          levelLoadingMaxRetry: 4,
+          
+          // Network timeouts and retries
+          manifestLoadingTimeOut: 15000,
+          manifestLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 500,
+          levelLoadingTimeOut: 15000,
+          levelLoadingMaxRetry: 6,
           levelLoadingRetryDelay: 1000,
-          fragLoadingTimeOut: 20000,
-          fragLoadingMaxRetry: 6,
+          fragLoadingTimeOut: 30000, // Longer fragment timeout
+          fragLoadingMaxRetry: 8, // More fragment retries
           fragLoadingRetryDelay: 1000,
           startFragPrefetch: true,
+          
+          // CORS configuration
           xhrSetup: (xhr: XMLHttpRequest, url: string) => {
-            // Add CORS headers
-            xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-            xhr.setRequestHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-            xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+            xhr.setRequestHeader('Accept', '*/*');
+            xhr.setRequestHeader('Cache-Control', 'no-cache');
+            xhr.setRequestHeader('Pragma', 'no-cache');
           }
         });
 
-        // Error handling
+        // Enhanced error handling
         hls.on(Hls.Events.ERROR, (event: string, data: any) => {
-          console.error('HLS Error:', event, data);
+          console.warn('HLS Event:', data.type, data.details);
+          
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
-                console.log('Network error, trying to recover...');
-                hls.startLoad();
+                console.log('Network error, attempting recovery...');
+                setTimeout(() => hls.startLoad(), 1000);
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
-                console.log('Media error, trying to recover...');
+                console.log('Media error, attempting recovery...');
                 hls.recoverMediaError();
                 break;
               default:
-                console.log('Fatal error, destroying HLS instance');
+                console.error('Fatal error, destroying player');
                 hls.destroy();
                 break;
             }
+          } else if (data.details === 'bufferStalledError') {
+            // Handle buffer stalls gracefully
+            console.log('Buffer stall, attempting smooth recovery...');
+            setTimeout(() => {
+              if (videoElement.paused && data.buffer < 5) {
+                videoElement.play().catch(e => console.log('Auto-play prevented'));
+              }
+            }, 2000);
           }
         });
 

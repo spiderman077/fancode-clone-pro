@@ -268,28 +268,59 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
             playsInline
           />
 
-          {/* Progress Bar */}
+          {/* Enhanced Progress Bar with Seek Control */}
           <div className="absolute bottom-16 left-4 right-4">
-            <div className="flex items-center gap-2 text-white text-sm mb-2">
-              <span>{formatTime(currentTime)}</span>
-              <div className="flex-1 bg-white/20 h-1 rounded-full overflow-hidden">
+            <div className="flex items-center gap-3 text-white text-sm mb-2">
+              <span className="text-xs font-mono bg-black/60 px-2 py-1 rounded">
+                {formatTime(currentTime)}
+              </span>
+              
+              {/* Main Seek Slider */}
+              <div className="flex-1 relative">
                 <input
                   type="range"
                   min="0"
                   max={duration || 0}
                   value={currentTime}
                   onChange={(e) => seekTo(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-transparent appearance-none cursor-pointer"
+                  className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer slider"
                   style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, rgba(255,255,255,0.2) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.2) 100%)`
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
                   }}
                 />
+                <div className="absolute top-0 left-0 w-full h-2 pointer-events-none">
+                  <div 
+                    className="absolute top-1 w-3 h-3 bg-primary rounded-full transform -translate-y-1/2 transition-all duration-150"
+                    style={{ left: `${(currentTime / (duration || 1)) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                  />
+                </div>
               </div>
-              <span>{formatTime(duration)}</span>
+
+              {/* Forward/Backward Controls */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => skipTime(-30)}
+                  className="text-white hover:bg-white/20 px-2 py-1 text-xs"
+                  title="Back 30s"
+                >
+                  -30s
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => skipTime(30)}
+                  className="text-white hover:bg-white/20 px-2 py-1 text-xs"
+                  title="Forward 30s"
+                >
+                  +30s
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Custom Video Controls Overlay */}
+          {/* Simplified Control Bar */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
             <div className="flex items-center justify-between text-white">
               {/* Left Controls */}
@@ -303,16 +334,6 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
                 >
                   <RotateCcw className="w-4 h-4" />
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => skipTime(-10)}
-                  className="text-white hover:bg-white/20"
-                  title="Rewind 10s"
-                >
-                  <SkipBack className="w-4 h-4" />
-                </Button>
 
                 <Button
                   variant="ghost"
@@ -322,20 +343,10 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
                 >
                   {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
                 </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => skipTime(10)}
-                  className="text-white hover:bg-white/20"
-                  title="Forward 10s"
-                >
-                  <SkipForward className="w-4 h-4" />
-                </Button>
               </div>
 
               {/* Center Controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="icon"
