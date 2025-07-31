@@ -12,8 +12,8 @@ export const matches: Match[] = [
     thumbnail: 'https://www.fancode.com/skillup-uploads/cms-media/New-Zealand-Tour-of-Zimbabwe-(Tests)Sporty-match-card-.jpg',
     category: 'Cricket',
     streams: {
-      dai: 'https://in-mc-pdlive.fancode.com/mumbai/128760_english_hls_67071ta-di_h264/index.m3u8',
-      adfree: 'https://in-mc-pdlive.fancode.com/mumbai/128760_english_hls_67071ta-di_h264/index.m3u8'
+      dai: 'https://in-mc-pdlive.fancode.com/mumbai/128760_english_hls_67492ta-di_h264/index.m3u8',
+      adfree: 'https://in-mc-pdlive.fancode.com/mumbai/128760_english_hls_67492ta-di_h264/index.m3u8'
     }
   },
   {
