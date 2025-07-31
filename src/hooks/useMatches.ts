@@ -7,7 +7,6 @@ export const useMatches = () => {
   const [matches, setMatches] = useState<Match[]>(fallbackMatches);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'live' | 'upcoming'>('all');
 
   // Use static matches for reliable streaming
   const fetchLiveData = async () => {
@@ -48,28 +47,8 @@ export const useMatches = () => {
     fetchLiveData();
   }, []);
 
-  // Calculate filters
-  const filters: MatchFilters = {
-    all: matches.length,
-    live: matches.filter(match => match.status === 'live').length,
-    upcoming: matches.filter(match => match.status === 'upcoming').length
-  };
-
-  // Filter matches based on active filter
-  const filteredMatches = activeFilter === 'all' 
-    ? matches 
-    : matches.filter(match => match.status === activeFilter);
-
-  const liveMatches = matches.filter(match => match.status === 'live');
-  const upcomingMatches = matches.filter(match => match.status === 'upcoming');
-
   return {
-    matches: filteredMatches,
-    liveMatches,
-    upcomingMatches,
-    filters,
-    activeFilter,
-    setActiveFilter,
+    matches,
     loading,
     error,
     refetch: fetchLiveData,
