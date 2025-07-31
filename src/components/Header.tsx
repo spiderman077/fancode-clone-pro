@@ -1,11 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import { MatchFilters } from '@/types/match';
 
-interface HeaderProps {
-  filters: MatchFilters;
-}
-
-export const Header = ({ filters }: HeaderProps) => {
+export const Header = () => {
   return (
     <div className="text-center space-y-6 py-12">
       {/* Logo & Title */}
@@ -21,10 +16,10 @@ export const Header = ({ filters }: HeaderProps) => {
       {/* Live Status Badges */}
       <div className="flex flex-wrap justify-center gap-4">
         <Badge variant="live" className="text-sm px-4 py-2 font-bold">
-          {filters.live} LIVE NOW
+          2 LIVE NOW
         </Badge>
         <Badge variant="upcoming" className="text-sm px-4 py-2 font-bold">
-          {filters.upcoming} UPCOMING
+          0 UPCOMING
         </Badge>
       </div>
 

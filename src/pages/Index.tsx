@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Header } from '@/components/Header';
-import { MatchFilters } from '@/components/MatchFilters';
+
 import { MatchCard } from '@/components/MatchCard';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { BackgroundImage } from '@/components/BackgroundImage';
@@ -13,11 +13,6 @@ import { Button } from '@/components/ui/button';
 const Index = () => {
   const { 
     matches, 
-    liveMatches, 
-    upcomingMatches, 
-    filters, 
-    activeFilter, 
-    setActiveFilter,
     loading,
     error,
     refetch,
@@ -60,7 +55,7 @@ const Index = () => {
       <BackgroundImage />
       <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header Section */}
-        <Header filters={filters} />
+        <Header />
 
         {/* Loading/Error States */}
         {loading && (
@@ -91,76 +86,15 @@ const Index = () => {
           />
         </div>
 
-        {/* Match Filters */}
-        <div className="mb-12">
-          <MatchFilters 
-            filters={filters}
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-          />
-        </div>
-
-        {/* Live Matches Section */}
-        {liveMatches.length > 0 && (activeFilter === 'all' || activeFilter === 'live') && (
+        {/* Matches Section */}
+        {matches.length > 0 && (
           <section className="mb-16">
             <div className="flex items-center gap-4 mb-8">
               <h2 className="text-3xl font-bold text-foreground">
-                LIVE Matches - Watch Now!
+                Matches
               </h2>
               <Badge variant="live" className="px-3 py-1 text-sm font-bold">
-                {liveMatches.length} STREAMING
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {liveMatches.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  onWatchStream={(streamUrl, type) => 
-                    handleWatchStream(streamUrl, type, match.title, match.id)
-                  }
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Upcoming Matches Section */}
-        {upcomingMatches.length > 0 && (activeFilter === 'all' || activeFilter === 'upcoming') && (
-          <section className="mb-16">
-            <div className="flex items-center gap-4 mb-8">
-              <h2 className="text-3xl font-bold text-foreground">
-                Coming Up Next
-              </h2>
-              <Badge variant="upcoming" className="px-3 py-1 text-sm font-bold">
-                {upcomingMatches.length} SCHEDULED
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingMatches.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* All Matches Section (when filter is active) */}
-        {activeFilter !== 'all' && (
-          <section className="mb-16">
-            <div className="flex items-center gap-4 mb-8">
-              <h2 className="text-3xl font-bold text-foreground">
-                {activeFilter === 'live' ? 'Live' : 'Upcoming'} Matches
-              </h2>
-              <Badge 
-                variant={activeFilter === 'live' ? 'live' : 'upcoming'} 
-                className="px-3 py-1 text-sm font-bold"
-              >
-                {matches.length} {activeFilter === 'live' ? 'STREAMING' : 'SCHEDULED'}
+                {matches.length} AVAILABLE
               </Badge>
             </div>
             
@@ -179,10 +113,10 @@ const Index = () => {
         )}
 
         {/* No Matches State */}
-        {matches.length === 0 && (
+        {matches.length === 0 && !loading && (
           <div className="text-center py-16">
             <h3 className="text-xl font-semibold text-muted-foreground">
-              No matches found for the selected filter
+              No matches available
             </h3>
           </div>
         )}
