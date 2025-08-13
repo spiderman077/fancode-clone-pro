@@ -38,13 +38,20 @@ export const useMatches = () => {
   // Get stream URLs for a specific match with CORS bypass
   const fetchStreamUrls = async (matchId: string): Promise<{dai?: string; adfree?: string}> => {
     try {
-      const match = fallbackMatches.find(m => m.id === matchId);
+      // First look in current matches, then fallback matches
+      const match = matches.find(m => m.id === matchId) || fallbackMatches.find(m => m.id === matchId);
       if (match?.streams) {
         return {
           dai: await CloudflareProxyService.getStreamProxy(match.streams.dai || ''),
           adfree: await CloudflareProxyService.getStreamProxy(match.streams.adfree || '')
         };
       }
+      
+      // If no streams found but match exists, return the stream URLs directly
+      if (match) {
+        return match.streams || {};
+      }
+      
       throw new Error('No streams found for match');
     } catch (error) {
       console.error(`Failed to fetch streams for match ${matchId}:`, error);
