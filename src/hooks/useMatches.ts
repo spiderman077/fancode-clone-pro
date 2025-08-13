@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Match } from '@/types/match';
 import { CloudflareProxyService } from '@/services/CloudflareProxyService';
-import { SkFcService } from '@/services/SkFcService';
+import { FancodeDirectApiService } from '@/services/FancodeDirectApiService';
 import { matches as fallbackMatches } from '@/data/matches';
 
 export const useMatches = () => {
@@ -9,18 +9,18 @@ export const useMatches = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch live matches from SK-FC site
+  // Fetch live matches directly from Fancode API
   const fetchLiveData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Fetching live matches from SK-FC...');
-      const liveMatches = await SkFcService.fetchLiveMatches();
+      console.log('Fetching live matches from Fancode API...');
+      const liveMatches = await FancodeDirectApiService.fetchLiveMatches();
       
       if (liveMatches.length > 0) {
         setMatches(liveMatches);
-        console.log(`Loaded ${liveMatches.length} live matches from SK-FC`);
+        console.log(`Loaded ${liveMatches.length} live matches from Fancode API`);
       } else {
         console.log('No live matches found, using fallback data');
         setMatches(fallbackMatches);
@@ -29,7 +29,7 @@ export const useMatches = () => {
       console.error('Error loading live matches:', error);
       console.log('Using fallback matches due to error');
       setMatches(fallbackMatches);
-      setError('Using offline data - live feed unavailable');
+      setError('Using offline data - Fancode API unavailable');
     } finally {
       setLoading(false);
     }
