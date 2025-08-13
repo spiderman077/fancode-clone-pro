@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Match, MatchFilters } from '@/types/match';
+import { Match } from '@/types/match';
 import { CloudflareProxyService } from '@/services/CloudflareProxyService';
+import { SkFcService } from '@/services/SkFcService';
 import { matches as fallbackMatches } from '@/data/matches';
 
 export const useMatches = () => {
@@ -8,18 +9,27 @@ export const useMatches = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use static matches for reliable streaming
+  // Fetch live matches from SK-FC site
   const fetchLiveData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Loading static matches for reliable streaming...');
-      setMatches(fallbackMatches);
-      console.log(`Loaded ${fallbackMatches.length} static matches`);
+      console.log('Fetching live matches from SK-FC...');
+      const liveMatches = await SkFcService.fetchLiveMatches();
+      
+      if (liveMatches.length > 0) {
+        setMatches(liveMatches);
+        console.log(`Loaded ${liveMatches.length} live matches from SK-FC`);
+      } else {
+        console.log('No live matches found, using fallback data');
+        setMatches(fallbackMatches);
+      }
     } catch (error) {
-      console.error('Error loading matches:', error);
-      setError('Failed to load matches');
+      console.error('Error loading live matches:', error);
+      console.log('Using fallback matches due to error');
+      setMatches(fallbackMatches);
+      setError('Using offline data - live feed unavailable');
     } finally {
       setLoading(false);
     }
@@ -42,9 +52,14 @@ export const useMatches = () => {
     }
   };
 
-  // Load static data once
+  // Load live data and set up auto-refresh
   useEffect(() => {
     fetchLiveData();
+    
+    // Auto-refresh every 2 minutes to keep data fresh
+    const interval = setInterval(fetchLiveData, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return {
