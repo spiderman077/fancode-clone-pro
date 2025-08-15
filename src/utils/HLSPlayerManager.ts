@@ -72,11 +72,20 @@ export class HLSPlayerManager {
           fragLoadingRetryDelay: 1000,
           startFragPrefetch: true,
           
-          // CORS configuration
+          // CORS configuration - simplified for direct CDN streams
           xhrSetup: (xhr: XMLHttpRequest, url: string) => {
-            xhr.setRequestHeader('Accept', '*/*');
-            xhr.setRequestHeader('Cache-Control', 'no-cache');
-            xhr.setRequestHeader('Pragma', 'no-cache');
+            // Don't add custom headers that might cause CORS issues
+            xhr.withCredentials = false;
+          },
+          
+          // Alternative fetch setup for better CORS handling
+          fetchSetup: (context: any, initParams: any) => {
+            // Use no-cors mode for external CDN streams
+            if (context.url.includes('cdn-asia.styxsports.live')) {
+              initParams.mode = 'no-cors';
+              initParams.credentials = 'omit';
+            }
+            return new Request(context.url, initParams);
           }
         });
 

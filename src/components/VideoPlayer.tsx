@@ -36,8 +36,14 @@ export const VideoPlayer = ({ streamUrl, title, matchId, onClose }: VideoPlayerP
       setError(null);
 
       try {
-        // Process the stream URL through Cloudflare-optimized proxy
-        const processed = await CloudflareProxyService.getStreamProxy(streamUrl);
+        // For direct HLS streams, try without proxy first
+        let processed = streamUrl;
+        
+        // Only use proxy if it's not already a direct CDN stream
+        if (!streamUrl.includes('cdn-asia.styxsports.live') && !streamUrl.includes('.m3u8?')) {
+          processed = await CloudflareProxyService.getStreamProxy(streamUrl);
+        }
+        
         setProcessedUrl(processed);
 
         if (videoRef.current) {
