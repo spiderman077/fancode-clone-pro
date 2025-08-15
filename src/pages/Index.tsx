@@ -23,7 +23,11 @@ const Index = () => {
     url: string;
     title: string;
     matchId?: string;
-  } | null>(null);
+  } | null>({
+    url: 'https://cdn-asia.styxsports.live/LiveApp/streams/xBiEsv2RQdeLIzRr24832085455929.m3u8',
+    title: 'Live Cricket Stream',
+    matchId: 'direct-stream'
+  });
 
   const handleWatchStream = async (streamUrl: string, type: 'dai' | 'adfree', title: string, matchId?: string) => {
     // Try to get fresh stream URLs if matchId is available
