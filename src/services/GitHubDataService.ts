@@ -42,7 +42,7 @@ export class GitHubDataService {
       
       const transformedMatches = data.matches
         .filter(match => match.status === 'LIVE' || match.status === 'UPCOMING' || match.status === 'PAUSED')
-        .map(this.transformMatch);
+        .map(GitHubDataService.transformMatch);
       
       console.log(`Successfully loaded ${transformedMatches.length} matches from GitHub`);
       return transformedMatches;
@@ -59,7 +59,7 @@ export class GitHubDataService {
       tournament: githubMatch.event_name,
       team1: githubMatch.team_1,
       team2: githubMatch.team_2,
-      datetime: this.parseDateTime(githubMatch.startTime),
+      datetime: GitHubDataService.parseDateTime(githubMatch.startTime),
       status: githubMatch.status === 'LIVE' || githubMatch.status === 'PAUSED' ? 'live' : 'upcoming',
       thumbnail: githubMatch.src,
       category: githubMatch.event_category,

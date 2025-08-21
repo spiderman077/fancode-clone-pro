@@ -26,20 +26,7 @@ const Index = () => {
     type?: 'dai' | 'adfree';
   } | null>(null);
 
-  // Auto-play first available live match on component mount
-  useEffect(() => {
-    if (matches.length > 0 && !currentStream) {
-      const liveMatch = matches.find(m => m.status === 'live' && m.streams?.adfree);
-      if (liveMatch?.streams?.adfree) {
-        setCurrentStream({
-          url: liveMatch.streams.adfree,
-          title: `${liveMatch.title} - Ad-Free Stream`,
-          matchId: liveMatch.id,
-          type: 'adfree'
-        });
-      }
-    }
-  }, [matches, currentStream]);
+  // Remove auto-play to show match selection instead
 
   const handleWatchStream = async (streamUrl: string, type: 'dai' | 'adfree', title: string, matchId?: string) => {
     // Try to get fresh stream URLs if matchId is available
