@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 
 import { MatchCard } from '@/components/MatchCard';
@@ -23,11 +23,23 @@ const Index = () => {
     url: string;
     title: string;
     matchId?: string;
-  } | null>({
-    url: 'https://cdn-asia.styxsports.live/LiveApp/streams/xBiEsv2RQdeLIzRr24832085455929.m3u8',
-    title: 'Live Cricket Stream',
-    matchId: 'direct-stream'
-  });
+    type?: 'dai' | 'adfree';
+  } | null>(null);
+
+  // Auto-play first available live match on component mount
+  useEffect(() => {
+    if (matches.length > 0 && !currentStream) {
+      const liveMatch = matches.find(m => m.status === 'live' && m.streams?.adfree);
+      if (liveMatch?.streams?.adfree) {
+        setCurrentStream({
+          url: liveMatch.streams.adfree,
+          title: `${liveMatch.title} - Ad-Free Stream`,
+          matchId: liveMatch.id,
+          type: 'adfree'
+        });
+      }
+    }
+  }, [matches, currentStream]);
 
   const handleWatchStream = async (streamUrl: string, type: 'dai' | 'adfree', title: string, matchId?: string) => {
     // Try to get fresh stream URLs if matchId is available

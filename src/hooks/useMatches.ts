@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Match } from '@/types/match';
 import { CloudflareProxyService } from '@/services/CloudflareProxyService';
-import { FancodeDirectApiService } from '@/services/FancodeDirectApiService';
+import { GitHubDataService } from '@/services/GitHubDataService';
 import { matches as fallbackMatches } from '@/data/matches';
 
 export const useMatches = () => {
@@ -9,27 +9,27 @@ export const useMatches = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch live matches directly from Fancode API
+  // Fetch matches from GitHub JSON data
   const fetchLiveData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('Fetching live matches from Fancode API...');
-      const liveMatches = await FancodeDirectApiService.fetchLiveMatches();
+      console.log('Fetching matches from GitHub JSON...');
+      const githubMatches = await GitHubDataService.fetchMatches();
       
-      if (liveMatches.length > 0) {
-        setMatches(liveMatches);
-        console.log(`Loaded ${liveMatches.length} live matches from Fancode API`);
+      if (githubMatches.length > 0) {
+        setMatches(githubMatches);
+        console.log(`Loaded ${githubMatches.length} matches from GitHub`);
       } else {
-        console.log('No live matches found, using fallback data');
+        console.log('No matches found, using fallback data');
         setMatches(fallbackMatches);
       }
     } catch (error) {
-      console.error('Error loading live matches:', error);
+      console.error('Error loading matches from GitHub:', error);
       console.log('Using fallback matches due to error');
       setMatches(fallbackMatches);
-      setError('Using offline data - Fancode API unavailable');
+      setError('Using offline data - GitHub source unavailable');
     } finally {
       setLoading(false);
     }
