@@ -20,11 +20,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: 'esnext',
-    rollupOptions: {
-      output: {
-        format: 'es'
-      }
-    }
+    target: 'esnext'
   }
 }));
